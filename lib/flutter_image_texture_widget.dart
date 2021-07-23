@@ -11,11 +11,7 @@ class FlutterImageTextureWidget extends StatefulWidget {
 
   final String url;
 
-  final double width;
-
-  final double height;
-
-  const FlutterImageTextureWidget({Key key, this.url, this.width, this.height}) : super(key: key);
+  const FlutterImageTextureWidget({Key key, this.url}) : super(key: key);
 
   @override
   _FlutterImageTextureWidgetState createState() => _FlutterImageTextureWidgetState();
@@ -37,36 +33,12 @@ class _FlutterImageTextureWidgetState extends State<FlutterImageTextureWidget>{
   }
 
   Future loadImage() async{
-    ui.Image info = await getImageInfo(widget.url);
-    width = widget.width??px2dp(info.width);
-    height = widget.height??px2dp(info.height);
-
-    textureId = await FlutterImageTexture.loadImg(widget.url,width,height);
+    Map value = await FlutterImageTexture.loadImg(widget.url);
+    textureId  = value['textureId'];
+    width = value['width'];
+    height = value['height'];
     print("hashCode----------$hashCode");
-    if(mounted)setState(() {});
-  }
-
-
-  double px2dp(int px){
-    double dp = 0.0;
-    double pixel = WidgetsBinding.instance.window.devicePixelRatio;
-    dp = px/pixel;
-    return Platform.isIOS?px.toDouble():dp;
-  }
-
-
-  static Future<ui.Image> getImageInfo(String url) async {
-    ImageStream stream =  NetworkImage(url).resolve(ImageConfiguration.empty);
-    Completer<ui.Image> completer =  Completer<ui.Image>();
-    ImageStreamListener listener;
-    listener = new ImageStreamListener(
-            (ImageInfo frame, bool synchronousCall) {
-          final ui.Image image = frame.image;
-          completer.complete(image);
-          stream.removeListener(listener);
-        });
-    stream.addListener(listener);
-    return completer.future;
+    if(mounted && width > 0 && height > 0)setState(() {});
   }
 
   @override

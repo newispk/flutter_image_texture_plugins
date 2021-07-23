@@ -3,7 +3,10 @@
 
 NSObject<FlutterTextureRegistry> *textures;
 NSMutableDictionary<NSNumber *, DuiaflutterextexturePresenter *> *renders;
-
+@interface FlutterimagetexturePlugin()
+@property (nonatomic, copy) FlutterResult result;
+@property (nonatomic, assign) int64_t textureId;
+@end
 @implementation FlutterimagetexturePlugin
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
@@ -16,22 +19,21 @@ NSMutableDictionary<NSNumber *, DuiaflutterextexturePresenter *> *renders;
 
 - (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result{
     if([call.method isEqualToString:@"load"]){
-        NSString *imageStr = call.arguments[@"url"];
+        self.result = result;
+        NSString *imageUrl = call.arguments[@"url"];
         Boolean asGif = [call.arguments[@"asGif"] boolValue];
-        CGFloat width = [call.arguments[@"width"] floatValue]*[UIScreen mainScreen].scale;
-        CGFloat height = [call.arguments[@"height"] floatValue]*[UIScreen mainScreen].scale;
-
-        CGSize size = CGSizeMake(width, height);
-        
-        DuiaflutterextexturePresenter *render = [[DuiaflutterextexturePresenter alloc] initWithImageStr:imageStr size:size asGif:asGif];
+        DuiaflutterextexturePresenter *render = [[DuiaflutterextexturePresenter alloc] initWithImageStr:imageUrl asGif:asGif];
         int64_t textureId = [textures registerTexture:render];
-
-        render.updateBlock = ^{
+        self.textureId = textureId;
+        render.updateBlock = ^(CGSize size) {
             [textures textureFrameAvailable:textureId];
+            if(size.width > 0 && size.height > 0)
+            {
+                self.result(@{@"textureId":@(self.textureId),@"width":@(size.width?:0),@"height":@(size.height?:0)});
+            }
         };
         [renders setObject:render forKey:[NSString stringWithFormat:@"%@",@(textureId)]];
-       
-        result(@(textureId));
+      
     }else if([call.method isEqualToString:@"release"]){
         if (call.arguments[@"id"]!=nil && ![call.arguments[@"id"] isKindOfClass:[NSNull class]]) {
             DuiaflutterextexturePresenter *render = [renders objectForKey:call.arguments[@"id"]];

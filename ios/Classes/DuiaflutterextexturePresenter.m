@@ -7,10 +7,6 @@
 
 #import "DuiaflutterextexturePresenter.h"
 #import <Foundation/Foundation.h>
-//#import <OpenGLES/EAGL.h>
-//#import <OpenGLES/ES2/gl.h>
-//#import <OpenGLES/ES2/glext.h>
-//#import <CoreVideo/CVPixelBuffer.h>
 #import <UIKit/UIKit.h>
 #import <SDWebImage/SDWebImageDownloader.h>
 #import <SDWebImage/SDWebImageManager.h>
@@ -70,10 +66,9 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
 @implementation DuiaflutterextexturePresenter
 
 
-- (instancetype)initWithImageStr:(NSString*)imageStr size:(CGSize)size asGif:(Boolean)asGif {
+- (instancetype)initWithImageStr:(NSString*)imageStr asGif:(Boolean)asGif {
     self = [super init];
     if (self){
-        self.size = size;
         self.asGif = asGif;
         self.useExSize = YES;//默认使用外部传入的大小
         
@@ -117,10 +112,6 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
         return nil;
     }
     CGImageRef image = [img CGImage];
-    
-    //    CGSize size = CGSizeMake(5000, 5000);
-//    CGFloat frameWidth = CGImageGetWidth(image);
-//    CGFloat frameHeight = CGImageGetHeight(image);
     CGFloat frameWidth = size.width;
     CGFloat frameHeight = size.height;
     
@@ -149,12 +140,6 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
                              [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey,
                              empty, kCVPixelBufferIOSurfacePropertiesKey,
                              nil];
-    
-    //    NSDictionary *options = @{
-    //        (NSString *)kCVPixelBufferCGImageCompatibilityKey:@YES,
-    //        (NSString *)kCVPixelBufferCGBitmapContextCompatibilityKey:@YES,
-    //        (NSString *)kCVPixelBufferIOSurfacePropertiesKey:[NSDictionary dictionary]
-    //    };
     
     CVPixelBufferRef pxbuffer = NULL;
     CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, frameWidth, frameHeight, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef) options, &pxbuffer);
@@ -198,6 +183,7 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
     [[SDWebImageDownloader sharedDownloader] downloadImageWithURL:[NSURL URLWithString:imageStr] completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
         if (weakSelf.asGif) {
             for (UIImage * uiImage in image.images) {
+                weakSelf.size = uiImage.size;
                 NSDictionary *dic = @{
                     @"duration":@(image.duration*1.0/image.images.count),
                     @"image":uiImage
@@ -206,14 +192,13 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
             }
             [weakSelf startGifDisplay];
         } else {
+            weakSelf.size = image.size;
             weakSelf.target = [weakSelf CVPixelBufferRefFromUiImage:image size:weakSelf.size];
             if (weakSelf.updateBlock) {
-                weakSelf.updateBlock();
+                weakSelf.updateBlock(weakSelf.size);
             }
         }
-        
     }];
-   
 }
 
 
@@ -234,14 +219,11 @@ BOOL CGImageRefContainsAlpha(CGImageRef imageRef) {
         }
         self.target = [self CVPixelBufferRefFromUiImage:[dic objectForKey:@"image"] size:self.size];
         _iscopy = NO;
-        self.updateBlock();
+        self.updateBlock(self.size);
         
         self.now_index += 1;
         if (self.now_index>=self.images.count) {
             self.now_index = 0;
-            //            self.displayLink.paused = YES;
-            //            [self.displayLink invalidate];
-            //            self.displayLink = nil;
         }
         self.can_show_duration = ((NSNumber*)[dic objectForKey:@"duration"]).floatValue;
     }

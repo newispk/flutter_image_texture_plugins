@@ -11,11 +11,9 @@
 
 @interface DuiaflutterextexturePresenter : NSObject <FlutterTexture>
 
+@property(copy,nonatomic) void(^updateBlock) (CGSize size);
 
-@property(copy,nonatomic) void(^updateBlock) (void);
-
-- (instancetype)initWithImageStr:(NSString*)imageStr size:(CGSize)size asGif:(Boolean)asGif;
-
+- (instancetype)initWithImageStr:(NSString*)imageStr asGif:(Boolean)asGif;
 -(void)dispose;
 @end
 
